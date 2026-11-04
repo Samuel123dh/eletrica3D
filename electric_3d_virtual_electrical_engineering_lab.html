@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELECTRIC 3D | Laboratório Virtual de Engenharia Elétrica</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0a0d14',
+              card: '#101726',
+              border: '#1e293b',
+              cyan: '#00f0ff',
+              blue: '#0077ff',
+              yellow: '#ffcc00',
+              danger: '#ff3366',
+            }
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 20px rgba(0, 240, 255, 0.35)',
+            'glow-blue': '0 0 20px rgba(0, 119, 255, 0.35)',
+            'glow-yellow': '0 0 20px rgba(255, 204, 0, 0.35)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    /* Custom Scrollbar & Utility Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00f0ff;
+    }
+    
+    .glass-panel {
+      background: rgba(16, 23, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+    }
+    
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(0, 240, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 240, 255, 0.15);
+    }
+    
+    .circuit-bg {
+      background-image: radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .neon-text-cyan {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+    
+    .neon-text-yellow {
+      text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    }
+    
+    canvas {
+      outline: none;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-slate-100 font-sans antialiased min-h-screen circuit-bg flex flex-col selection:bg-brand-cyan selection:text-black">
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- LOGO -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-cyan flex items-center justify-center shadow-glow-cyan transition-transform group-hover:scale-105">
+          <i class="fa-solid fa-bolt text-slate-950 text-xl animate-pulse"></i>
+        </div>
+        <div>
+          <span class="text-2xl font-black tracking-wider bg-gradient-to-r from-white via-slate-200 to-brand-cyan bg-clip-text text-transparent">
+            ELECTRIC<span class="text-brand-cyan">3D</span>
+          </span>
+          <span class="block text-[10px] tracking-widest text-slate-400 font-mono -mt-1 uppercase">Virtual Lab v2.5</span>
+        </div>
+      </a>
+
+      <!-- DESKTOP MENU -->
+      <nav class="hidden md:flex items-center gap-1 lg:gap-2 font-medium text-sm">
+        <a href="#lab3d" class="px-3 py-2 rounded-lg hover:text-brand-cyan hover:bg-slate-800/50 transition">Laboratório 3D</a>
+        <a href="#simulators" class="px-3 py-2 rounded-lg hover:text-brand-cyan hover:bg-slate-800/50 transition">Simuladores</a>
+        <a href="#modules" class="px-3 py-2 rounded-lg hover:text-brand-cyan hover:bg-slate-800/50 transition">Módulos</a>
+        <a href="#safety" class="px-3 py-2 rounded-lg hover:text-brand-yellow hover:bg-slate-800/50 transition text-brand-yellow/90"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Segurança</a>
+        <a href="#glossary" class="px-3 py-2 rounded-lg hover:text-brand-cyan hover:bg-slate-800/50 transition">Glossário</a>
+        <a href="#quiz" class="px-3 py-2 rounded-lg hover:text-brand-cyan hover:bg-slate-800/50 transition">Quiz</a>
+      </nav>
+
+      <!-- RIGHT ACTION BUTTONS -->
+      <div class="hidden sm:flex items-center gap-3">
+        <a href="#simulators" class="px-4 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-brand-blue to-brand-cyan text-slate-950 hover:brightness-110 shadow-glow-cyan transition transform active:scale-95 uppercase tracking-wider">
+          <i class="fa-solid fa-play mr-1.5"></i>Iniciar Simulador
+        </a>
+      </div>
+
+      <!-- MOBILE MENU TOGGLE -->
+      <button id="mobileMenuBtn" class="md:hidden text-slate-300 hover:text-brand-cyan text-2xl p-2">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- MOBILE MENU DRAWER -->
+    <div id="mobileMenu" class="hidden md:hidden bg-brand-card border-b border-slate-800 px-4 pt-2 pb-6 space-y-2">
+      <a href="#lab3d" class="mobile-link block px-3 py-2 rounded-lg text-slate-300 hover:text-brand-cyan hover:bg-slate-800">Laboratório 3D</a>
+      <a href="#simulators" class="mobile-link block px-3 py-2 rounded-lg text-slate-300 hover:text-brand-cyan hover:bg-slate-800">Simuladores</a>
+      <a href="#modules" class="mobile-link block px-3 py-2 rounded-lg text-slate-300 hover:text-brand-cyan hover:bg-slate-800">Módulos Educativos</a>
+      <a href="#safety" class="mobile-link block px-3 py-2 rounded-lg text-brand-yellow hover:bg-slate-800"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Segurança Elétrica</a>
+      <a href="#glossary" class="mobile-link block px-3 py-2 rounded-lg text-slate-300 hover:text-brand-cyan hover:bg-slate-800">Glossário Técnico</a>
+      <a href="#quiz" class="mobile-link block px-3 py-2 rounded-lg text-slate-300 hover:text-brand-cyan hover:bg-slate-800">Quiz de Conhecimento</a>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-grow">
+    
+    <!-- HERO SECTION -->
+    <section class="relative py-16 lg:py-24 overflow-hidden border-b border-slate-800/80">
+      <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-brand-blue/10 via-transparent to-transparent"></div>
+      
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="grid lg:grid-cols-12 gap-12 items-center">
+          
+          <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan text-xs font-mono font-semibold uppercase tracking-wider">
+              <span class="w-2 h-2 rounded-full bg-brand-cyan animate-ping"></span>
+              Plataforma Interativa 3D de Engenharia
+            </div>
+            
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none">
+              Explore o Mundo da <span class="bg-gradient-to-r from-brand-cyan via-sky-400 to-brand-blue bg-clip-text text-transparent neon-text-cyan">Eletricidade em 3D</span>
+            </h1>
+            
+            <p class="text-slate-300 text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
+              Aprenda engenharia elétrica visualizando o funcionamento interno de máquinas, componentes e circuitos em um ambiente tridimensional interativo com simulações físicas em tempo real.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4">
+              <a href="#lab3d" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-blue text-slate-950 font-bold hover:shadow-glow-cyan transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+                <i class="fa-solid fa-cube text-lg"></i> Explorar Modelos 3D
+              </a>
+              <a href="#simulators" class="px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-semibold transition flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-brand-cyan"></i> Testar Simuladores
+              </a>
+            </div>
+
+            <!-- QUICK STATS -->
+            <div class="grid grid-cols-3 gap-4 pt-8 border-t border-slate-800/80 max-w-lg mx-auto lg:mx-0 font-mono text-center sm:text-left">
+              <div>
+                <div class="text-2xl font-bold text-brand-cyan">100%</div>
+                <div class="text-xs text-slate-400">Interativo 3D</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold text-brand-cyan">4+</div>
+                <div class="text-xs text-slate-400">Simuladores</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold text-brand-cyan">NR-10</div>
+                <div class="text-xs text-slate-400">Normas Segurança</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HERO QUICK PREVIEW CARD -->
+          <div class="lg:col-span-5">
+            <div class="glass-panel rounded-2xl p-4 shadow-2xl relative border-brand-cyan/30 overflow-hidden">
+              <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                  <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+                  <span class="ml-2 text-brand-cyan font-semibold">ENGINEERING_RENDER.V3D</span>
+                </div>
+                <span class="text-xs font-mono text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded">60 FPS</span>
+              </div>
+              
+              <div class="relative h-64 sm:h-80 rounded-xl overflow-hidden mt-3 bg-slate-950/80 flex items-center justify-center border border-slate-800">
+                <div class="absolute inset-0 circuit-bg opacity-30"></div>
+                <!-- Mini canvas representation or quick feature highlight -->
+                <div class="relative text-center p-6 space-y-4">
+                  <div class="w-20 h-20 mx-auto rounded-full bg-brand-cyan/10 border border-brand-cyan/40 flex items-center justify-center shadow-glow-cyan text-brand-cyan text-3xl animate-bounce">
+                    <i class="fa-solid fa-atom"></i>
+                  </div>
+                  <p class="text-sm text-slate-300 font-medium">Visualização Tridimensional com OrbitControls WebGL</p>
+                  <p class="text-xs text-slate-500">Gire, amplie, desmonte e analise o fluxo magnético e elétrico de equipamentos em tempo real.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: INTERACTIVE 3D LABORATORY VIEWER -->
+    <section id="lab3d" class="py-16 border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <div class="text-xs font-mono text-brand-cyan uppercase tracking-wider mb-1">Módulo Interativo Principais Componentes</div>
+            <h2 class="text-3xl font-black">Laboratório Tridimensional 3D</h2>
+          </div>
+          <p class="text-slate-400 text-sm max-w-md">
+            Clique nos componentes abaixo para carregar seu modelo 3D. Utilize o mouse para rotacionar (360°), zoom (scroll) e clique nas peças para identificação.
+          </p>
+        </div>
+
+        <!-- COMPONENT SELECTOR TABS -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <button data-model="resistor" class="model-tab-btn active px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-brand-cyan text-slate-950 shadow-glow-cyan transition">
+            <i class="fa-solid fa-wave-square"></i> Resistor de Filme
+          </button>
+          <button data-model="transformer" class="model-tab-btn px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 transition">
+            <i class="fa-solid fa-bolt-lightning"></i> Transformador
+          </button>
+          <button data-model="motor" class="model-tab-btn px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 transition">
+            <i class="fa-solid fa-fan"></i> Motor Elétrico
+          </button>
+          <button data-model="solar" class="model-tab-btn px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 transition">
+            <i class="fa-solid fa-solar-panel"></i> Painel Solar
+          </button>
+        </div>
+
+        <!-- 3D WORKSPACE GRID -->
+        <div class="grid lg:grid-cols-12 gap-8 items-start">
+          
+          <!-- CANVAS CONTAINER -->
+          <div class="lg:col-span-8 bg-slate-950/90 rounded-2xl border border-slate-800 p-4 relative shadow-2xl overflow-hidden group">
+            
+            <!-- OVERLAY VIEW CONTROLS -->
+            <div class="absolute top-6 left-6 z-10 flex flex-wrap gap-2">
+              <button id="btnResetCamera" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-rotate-left text-brand-cyan"></i> Reiniciar Câmera
+              </button>
+              <button id="btnToggleAnim" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-play text-brand-cyan" id="animIcon"></i> <span id="animLabel">Pausar Fluxo</span>
+              </button>
+              <button id="btnExplode" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-arrows-split-up-and-left text-brand-cyan"></i> Modos Destaque
+              </button>
+            </div>
+
+            <!-- INSTRUCTION BADGE -->
+            <div class="absolute bottom-6 left-6 z-10 hidden sm:block pointer-events-none">
+              <div class="bg-slate-900/80 backdrop-filter blur-md border border-slate-800 text-[11px] font-mono text-slate-400 px-3 py-2 rounded-lg space-y-1">
+                <div><i class="fa-solid fa-mouse text-brand-cyan mr-1"></i> Botão Esquerdo: Rotacionar 360°</div>
+                <div><i class="fa-solid fa-scroll text-brand-cyan mr-1"></i> Scroll: Zoom | Botão Direito: Mover</div>
+                <div><i class="fa-solid fa-hand-pointer text-brand-cyan mr-1"></i> Clique na peça para inspecionar</div>
+              </div>
+            </div>
+
+            <!-- ACTIVE SELECTION TOAST -->
+            <div id="selectionToast" class="absolute top-6 right-6 z-10 bg-brand-cyan/20 backdrop-filter blur-md border border-brand-cyan/50 text-brand-cyan px-3 py-1.5 rounded-lg font-mono text-xs font-semibold hidden animate-pulse">
+              Componente: <span id="selectedPartName">Corpo de Cerâmica</span>
+            </div>
+
+            <!-- CANVAS ELEMENT -->
+            <div id="canvas3dContainer" class="w-full h-[450px] sm:h-[550px] rounded-xl cursor-grab active:cursor-grabbing"></div>
+          </div>
+
+          <!-- TECHNICAL SPECIFICATION SIDE PANEL -->
+          <div class="lg:col-span-4 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
+              
+              <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span class="text-xs font-mono text-brand-cyan uppercase tracking-wider">Ficha Técnica do Equipamento</span>
+                <span id="equipmentTag" class="text-xs font-mono px-2 py-0.5 rounded bg-brand-cyan/10 text-brand-cyan">PASSIVO</span>
+              </div>
+
+              <div>
+                <h3 id="equipmentTitle" class="text-2xl font-bold text-white mb-2">Resistor de Filme Metálico</h3>
+                <p id="equipmentDesc" class="text-slate-300 text-sm leading-relaxed">
+                  Componente elétrico passivo cuja principal função é limitar o fluxo de corrente elétrica em um circuito através da conversão de energia elétrica em calor (Efeito Joule).
+                </p>
+              </div>
+
+              <!-- COLLAPSIBLE TECHNICAL DETAILS -->
+              <div class="space-y-4 pt-2">
+                <div class="border-l-2 border-brand-cyan pl-3">
+                  <h4 class="text-xs font-mono text-brand-cyan uppercase">Como Funciona Internamente</h4>
+                  <p id="equipmentHow" class="text-xs text-slate-300 mt-1 leading-normal">
+                    Formado por um elemento resistivo de liga metálica depositado sobre um cilindro cerâmico. O espiralamento do filme define o valor exato da resistência elétricas ($\Omega$).
+                  </p>
+                </div>
+
+                <div class="border-l-2 border-brand-blue pl-3">
+                  <h4 class="text-xs font-mono text-brand-blue uppercase">Aplicações Práticas</h4>
+                  <p id="equipmentApps" class="text-xs text-slate-300 mt-1 leading-normal">
+                    Limitadores de corrente em LEDs, divisores de tensão, polarização de transistores e circuitos de proteção em fontes de alimentação.
+                  </p>
+                </div>
+
+                <div class="border-l-2 border-brand-yellow pl-3">
+                  <h4 class="text-xs font-mono text-brand-yellow uppercase">Cuidados e Segurança</h4>
+                  <p id="equipmentSafety" class="text-xs text-slate-300 mt-1 leading-normal">
+                    Respeitar a potência máxima nominal ($P = V \times I$). Sobrecargas térmicas podem causar derretimento da camada isolante e alteração permanente do valor ôhmico.
+                  </p>
+                </div>
+              </div>
+
+              <!-- COMPONENT PARTS LIST -->
+              <div class="pt-2 border-t border-slate-800">
+                <span class="text-xs font-mono text-slate-400 block mb-2">Estrutura Interna Identificada:</span>
+                <div id="partsList" class="flex flex-wrap gap-1.5">
+                  <span class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-slate-300">Terminal de Cobre</span>
+                  <span class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-slate-300">Cilindro Cerâmico</span>
+                  <span class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-slate-300">Faixas de Cor</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: INTERACTIVE SIMULATORS SUITE -->
+    <section id="simulators" class="py-16 border-b border-slate-800/80 bg-slate-950/40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan text-xs font-mono font-semibold uppercase mb-3">
+            <i class="fa-solid fa-calculator"></i> Cálculos em Tempo Real
+          </div>
+          <h2 class="text-3xl font-black">Suíte de Simuladores Interativos</h2>
+          <p class="text-slate-400 text-sm mt-2">
+            Ajuste os parâmetros dos circuitos para observar instantaneamente os cálculos de engenharia elétrica e o comportamento do fluxo de elétrons.
+          </p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+          
+          <!-- SIMULATOR 1: LEI DE OHM & POTÊNCIA -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-bolt text-brand-cyan"></i> Lei de Ohm & Potência
+                </h3>
+                <p class="text-xs text-slate-400">Relação fundamental entre Tensão ($V$), Corrente ($I$), Resistência ($R$) e Potência ($P$).</p>
+              </div>
+              <span class="font-mono text-xs text-brand-cyan bg-brand-cyan/10 px-2.5 py-1 rounded border border-brand-cyan/20">
+                $V = I \cdot R$
+              </span>
+            </div>
+
+            <!-- CONTROLS -->
+            <div class="space-y-5">
+              <div>
+                <div class="flex justify-between text-sm font-mono mb-2">
+                  <span class="text-slate-300">Tensão ($V$):</span>
+                  <span id="ohmVoltageVal" class="text-brand-cyan font-bold">12.0 Volts</span>
+                </div>
+                <input id="ohmVoltageSlider" type="range" min="1" max="220" value="12" step="1" 
+                       class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-cyan">
+              </div>
+
+              <div>
+                <div class="flex justify-between text-sm font-mono mb-2">
+                  <span class="text-slate-300">Resistência ($R$):</span>
+                  <span id="ohmResistanceVal" class="text-brand-cyan font-bold">10.0 $\Omega$</span>
+                </div>
+                <input id="ohmResistanceSlider" type="range" min="1" max="100" value="10" step="1" 
+                       class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-cyan">
+              </div>
+            </div>
+
+            <!-- LIVE CALCULATED RESULTS -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-slate-400 block mb-1">Corrente Elétrica ($I$)</span>
+                <span id="ohmCurrentRes" class="text-2xl font-bold font-mono text-brand-cyan">1.20 A</span>
+                <span class="text-[10px] text-slate-500 block mt-1 font-mono">I = V / R</span>
+              </div>
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-slate-400 block mb-1">Potência Dissipada ($P$)</span>
+                <span id="ohmPowerRes" class="text-2xl font-bold font-mono text-brand-yellow">14.40 W</span>
+                <span class="text-[10px] text-slate-500 block mt-1 font-mono">P = V × I</span>
+              </div>
+            </div>
+
+            <!-- ELECTRON DRIFT CANVAS VISUALIZER -->
+            <div class="space-y-2">
+              <span class="text-xs font-mono text-slate-400 flex items-center justify-between">
+                <span>Simulação do Fluxo de Cargas Elétricas</span>
+                <span id="electronSpeedLabel" class="text-brand-cyan">Velocidade: Média</span>
+              </span>
+              <div class="relative h-20 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center">
+                <canvas id="circuitElectronCanvas" class="w-full h-full"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIMULATOR 2: CONSUMO RESIDENCIAL KWH -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-house-plug text-brand-yellow"></i> Consumo Residencial (kWh)
+                </h3>
+                <p class="text-xs text-slate-400">Calcule o impacto financeiro de aparelhos elétricos na fatura de energia.</p>
+              </div>
+              <span class="font-mono text-xs text-brand-yellow bg-brand-yellow/10 px-2.5 py-1 rounded border border-brand-yellow/20">
+                kWh = (W × hrs) / 1000
+              </span>
+            </div>
+
+            <!-- APPLIANCE SELECTOR & INPUTS -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono text-slate-300 mb-1.5">Selecione o Aparelho Residencial:</label>
+                <select id="applianceSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan">
+                  <option value="3500">Chuveiro Elétrico (3500 Watts)</option>
+                  <option value="1500">Ar Condicionado Split 9000 BTUs (1500 Watts)</option>
+                  <option value="250">Geladeira Frost Free (250 Watts)</option>
+                  <option value="1800">Ferro de Passar Roupas (1800 Watts)</option>
+                  <option value="15">Lâmpada LED (15 Watts)</option>
+                  <option value="300">Computador Desktop PC (300 Watts)</option>
+                </select>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-mono text-slate-300 mb-1.5">Uso Diário (Horas):</label>
+                  <input id="kwhHoursInput" type="number" min="0.1" max="24" value="1.0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 font-mono focus:outline-none focus:border-brand-cyan">
+                </div>
+                <div>
+                  <label class="block text-xs font-mono text-slate-300 mb-1.5">Tarifa da Energia (R$/kWh):</label>
+                  <input id="kwhTariffInput" type="number" min="0.1" max="3" value="0.85" step="0.05" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 font-mono focus:outline-none focus:border-brand-cyan">
+                </div>
+              </div>
+            </div>
+
+            <!-- KWH RESULTS DISPLAY -->
+            <div class="grid grid-cols-2 gap-4 pt-2">
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-slate-400 block mb-1">Consumo Mensal (30 dias)</span>
+                <span id="kwhMonthlyVal" class="text-2xl font-bold font-mono text-brand-cyan">105.00 kWh</span>
+                <span class="text-[10px] text-slate-500 block mt-1 font-mono">Energia Total</span>
+              </div>
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-slate-400 block mb-1">Custo Estimado Mensal</span>
+                <span id="kwhCostVal" class="text-2xl font-bold font-mono text-green-400">R$ 89.25</span>
+                <span class="text-[10px] text-slate-500 block mt-1 font-mono">Sem impostos extras</span>
+              </div>
+            </div>
+
+            <!-- TIP BOX -->
+            <div class="bg-brand-cyan/5 border border-brand-cyan/20 p-3 rounded-xl text-xs text-slate-300 flex items-start gap-2">
+              <i class="fa-solid fa-lightbulb text-brand-cyan text-base mt-0.5"></i>
+              <span>Dica de Eficiência: Reduzir 15 minutos diários no uso do chuveiro elétrico pode economizar até R$ 25,00 por mês na sua fatura.</span>
+            </div>
+          </div>
+
+          <!-- SIMULATOR 3: CIRCUITO SÉRIE VS PARALELO -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-diagram-project text-brand-cyan"></i> Circuitos Série vs. Paralelo
+                </h3>
+                <p class="text-xs text-slate-400">Compare a resistência equivalente ($R_{eq}$) entre duas topologias.</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-mono text-slate-300 mb-1">Resistor 1 ($R_1$):</label>
+                <input id="circuitR1" type="number" min="1" value="20" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 font-mono">
+              </div>
+              <div>
+                <label class="block text-xs font-mono text-slate-300 mb-1">Resistor 2 ($R_2$):</label>
+                <input id="circuitR2" type="number" min="1" value="30" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 font-mono">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- SERIES RESULT -->
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-brand-cyan font-bold block mb-1">Associação em SÉRIE</span>
+                <span id="seriesReqVal" class="text-2xl font-bold font-mono text-white">50.00 $\Omega$</span>
+                <span class="text-[11px] text-slate-400 block mt-1 font-mono">$R_{eq} = R_1 + R_2$</span>
+              </div>
+              <!-- PARALLEL RESULT -->
+              <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+                <span class="text-xs font-mono text-brand-cyan font-bold block mb-1">Associação em PARALELO</span>
+                <span id="parallelReqVal" class="text-2xl font-bold font-mono text-white">12.00 $\Omega$</span>
+                <span class="text-[11px] text-slate-400 block mt-1 font-mono">$R_{eq} = (R_1 \cdot R_2)/(R_1 + R_2)$</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIMULATOR 4: RELAÇÃO DE ESPIRAS NO TRANSFORMADOR -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-retweet text-brand-blue"></i> Relação de Espiras do Transformador
+                </h3>
+                <p class="text-xs text-slate-400">Transformação de tensões por indução eletromagnética.</p>
+              </div>
+              <span class="font-mono text-xs text-brand-blue bg-brand-blue/10 px-2.5 py-1 rounded border border-brand-blue/20">
+                $V_1 / V_2 = N_1 / N_2$
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-mono text-slate-300 mb-1">Tensão Primário ($V_1$)</label>
+                <input id="transV1" type="number" value="220" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-sm font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono text-slate-300 mb-1">Espiras Primário ($N_1$)</label>
+                <input id="transN1" type="number" value="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-sm font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono text-slate-300 mb-1">Espiras Secundário ($N_2$)</label>
+                <input id="transN2" type="number" value="100" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-sm font-mono text-slate-200">
+              </div>
+            </div>
+
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center flex flex-col items-center justify-center">
+              <span class="text-xs font-mono text-slate-400 block mb-1">Tensão Secundária Resultante ($V_2$)</span>
+              <span id="transV2Val" class="text-3xl font-bold font-mono text-brand-cyan">22.00 Volts</span>
+              <span id="transTypeLabel" class="text-xs text-brand-yellow font-semibold mt-1">Transformador Rebaixador (10:1)</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: EDUCATIONAL MODULES CATEGORIES SHOWCASE -->
+    <section id="modules" class="py-16 border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <div class="text-xs font-mono text-brand-cyan uppercase tracking-wider mb-1">Grade Curricular Básica & Avançada</div>
+          <h2 class="text-3xl font-black">Módulos de Aprendizado Técnico</h2>
+          <p class="text-slate-400 text-sm mt-2">
+            Navegue pelas categorias essenciais da Engenharia Elétrica, do nível atômico às grandes matrizes energéticas.
+          </p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <!-- CATEGORY 1 -->
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 flex items-center justify-center text-brand-cyan text-xl">
+              <i class="fa-solid fa-atom"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">A. Fundamentos</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Tensão, corrente, resistência, potência, corrente contínua (CC) x alternada (CA) e as leis fundamentais dos circuitos elétricos.
+            </p>
+            <ul class="text-[11px] font-mono text-slate-300 space-y-1">
+              <li>• Carga Elétrica & Campo</li>
+              <li>• Análise de Circuitos</li>
+              <li>• Frequência & Fase (Hz)</li>
+            </ul>
+          </div>
+
+          <!-- CATEGORY 2 -->
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-brand-blue/10 border border-brand-blue/30 flex items-center justify-center text-brand-blue text-xl">
+              <i class="fa-solid fa-microchip"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">B. Componentes</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Dispositivos discretos passivos e ativos: Resistores, Capacitores, Indutores, Diodos, Transistores e Disjuntores de Proteção.
+            </p>
+            <ul class="text-[11px] font-mono text-slate-300 space-y-1">
+              <li>• Semicondutores</li>
+              <li>• Relés & Contatores</li>
+              <li>• Transformadores</li>
+            </ul>
+          </div>
+
+          <!-- CATEGORY 3 -->
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-brand-yellow/10 border border-brand-yellow/30 flex items-center justify-center text-brand-yellow text-xl">
+              <i class="fa-solid fa-house-signal"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">C. Instalações</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Quadros de distribuição residenciais, dimensionamento de cabos, disjuntores NBR 5410, dispositivos DR e DPS.
+            </p>
+            <ul class="text-[11px] font-mono text-slate-300 space-y-1">
+              <li>• Aterramento TN-S / TT</li>
+              <li>• Bitola de Condutores</li>
+              <li>• Proteção Diferencial</li>
+            </ul>
+          </div>
+
+          <!-- CATEGORY 4 -->
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 text-xl">
+              <i class="fa-solid fa-solar-panel"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">D. Geração & Renováveis</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Matrizes energéticas: Usinas Hidrelétricas, Fotovoltaicas On-Grid/Off-Grid, Geradores Eólicos e Turbinas Elétricas.
+            </p>
+            <ul class="text-[11px] font-mono text-slate-300 space-y-1">
+              <li>• Efeito Fotovoltaico</li>
+              <li>• Inversores Frequência</li>
+              <li>• Linhas de Transmissão</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: SEGURANÇA ELÉTRICA & NR-10 -->
+    <section id="safety" class="py-16 border-b border-slate-800/80 bg-slate-950/60 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- DANGER HEADER BANNER -->
+        <div class="glass-panel border-l-4 border-brand-yellow p-6 rounded-2xl mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 text-brand-yellow font-mono text-xs font-bold uppercase tracking-wider">
+              <i class="fa-solid fa-triangle-exclamation text-base"></i> Segurança Elétrica e Normas Regulamentadoras (NR-10)
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white">Prioridade Absoluta: Prevenção de Acidentes</h2>
+            <p class="text-slate-300 text-sm max-w-3xl">
+              A eletricidade é invisível e inodora. Trabalhar em circuitos energizados exige capacitação técnica rigorosa, desenergização comprovada e uso de Equipamentos de Proteção Individual (EPI).
+            </p>
+          </div>
+          <a href="#safety-details" class="px-5 py-3 rounded-xl bg-brand-yellow text-slate-950 font-bold hover:brightness-110 transition shrink-0 text-sm">
+            Ver Regras da NR-10
+          </a>
+        </div>
+
+        <div id="safety-details" class="grid lg:grid-cols-3 gap-8">
+          
+          <!-- SAFETY CARD 1 -->
+          <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 space-y-4">
+            <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 font-bold">
+              01
+            </div>
+            <h3 class="text-lg font-bold text-white">Os Perigos do Choque Elétrico</h3>
+            <p class="text-slate-300 text-xs leading-relaxed">
+              O choque elétrico ocorre quando a corrente passa pelo corpo humano. Valores a partir de 30mA já podem provocar fibrilação cardíaca e parada respiratória.
+            </p>
+            <div class="bg-red-500/10 p-3 rounded-xl border border-red-500/20 text-[11px] text-red-300">
+              <strong>Efeito Fisiológico:</strong> A partir de 10mA ocorre a "contratura muscular", impedindo a pessoa de soltar o condutor energizado.
+            </div>
+          </div>
+
+          <!-- SAFETY CARD 2 -->
+          <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 space-y-4">
+            <div class="w-10 h-10 rounded-xl bg-brand-yellow/10 border border-brand-yellow/30 flex items-center justify-center text-brand-yellow font-bold">
+              02
+            </div>
+            <h3 class="text-lg font-bold text-white">Procedimento LOTO (Bloqueio)</h3>
+            <p class="text-slate-300 text-xs leading-relaxed">
+              Sempre siga os passos de desenergização: Seccionamento, Impedimento de reenergização (cadeado/etiqueta), Constatação de ausência de tensão e Aterramento provisório.
+            </p>
+            <div class="bg-brand-yellow/10 p-3 rounded-xl border border-brand-yellow/20 text-[11px] text-brand-yellow">
+              <strong>Regra de Ouro:</strong> "Testar antes de tocar". Sempre utilize um multímetro ou detector de tensão calibrado.
+            </div>
+          </div>
+
+          <!-- SAFETY CARD 3 -->
+          <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 space-y-4">
+            <div class="w-10 h-10 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 flex items-center justify-center text-brand-cyan font-bold">
+              03
+            </div>
+            <h3 class="text-lg font-bold text-white">Dispositivos de Proteção (DR / DPS)</h3>
+            <p class="text-slate-300 text-xs leading-relaxed">
+              O Interruptor Diferencial Residual (DR) detecta fugas de corrente e desliga o circuito em milissegundos. O DPS protege equipamentos contra surtos atmosféricos (rayos).
+            </p>
+            <div class="bg-brand-cyan/10 p-3 rounded-xl border border-brand-cyan/20 text-[11px] text-brand-cyan">
+              <strong>Obrigatório pela NBR 5410:</strong> Instalação de DR de alta sensibilidade (30mA) em áreas molhadas como banheiros e cozinhas.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 5: TECHNICAL GLOSSARY & SEARCH -->
+    <section id="glossary" class="py-16 border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <div class="text-xs font-mono text-brand-cyan uppercase tracking-wider mb-1">Dicionário Técnico</div>
+            <h2 class="text-3xl font-black">Glossário de Engenharia Elétrica</h2>
+          </div>
+          <div class="w-full md:w-80 relative">
+            <input id="glossarySearch" type="text" placeholder="Pesquisar termo (ex: Volts, Trifásico...)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-cyan pl-10 font-mono">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
+          </div>
+        </div>
+
+        <div id="glossaryGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Terms dynamically generated -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 6: KNOWLEDGE QUIZ -->
+    <section id="quiz" class="py-16 border-b border-slate-800/80 bg-slate-950/40">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan text-xs font-mono font-semibold uppercase mb-3">
+            <i class="fa-solid fa-graduation-cap"></i> Avaliação de Conhecimento
+          </div>
+          <h2 class="text-3xl font-black">Quiz Interativo de Engenharia</h2>
+          <p class="text-slate-400 text-sm mt-1">Teste seus conhecimentos conceituais e práticos.</p>
+        </div>
+
+        <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+          <div id="quizContainer">
+            <!-- Dynamic Quiz Content -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-12 text-slate-400 text-xs font-mono">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-brand-cyan/10 border border-brand-cyan/30 flex items-center justify-center text-brand-cyan">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <span class="text-sm font-bold text-white tracking-wider">ELECTRIC<span class="text-brand-cyan">3D</span></span>
+          <p class="text-[11px] text-slate-500">Plataforma Interativa de Ensino de Engenharia Elétrica</p>
+        </div>
+      </div>
+      <div class="text-center md:text-right text-slate-500 space-y-1">
+        <p>© 2026 ELECTRIC 3D Virtual Lab. Desenvolvido para navegadores modernos via WebGL & Three.js.</p>
+        <p class="text-brand-cyan/70">Atenção: Simulações virtuais não substituem treinamento formal presencial de segurança NBR/NR-10.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* ==========================================================================
+       1. DATA STRUCTURES & DATA DICTIONARIES
+       ========================================================================== */
+    const EQUIPMENT_DATA = {
+      resistor: {
+        title: "Resistor de Filme Metálico",
+        tag: "PASSIVO",
+        desc: "Componente elétrico passivo cuja principal função é limitar o fluxo de corrente elétrica em um circuito através da conversão de energia elétrica em calor (Efeito Joule).",
+        how: "Formado por um elemento resistivo de liga metálica depositado sobre um cilindro cerâmico. O espiralamento do filme define o valor exato da resistência elétricas (Ω).",
+        apps: "Limitadores de corrente em LEDs, divisores de tensão, polarização de transistores e circuitos de proteção em fontes de alimentação.",
+        safety: "Respeitar a potência máxima nominal (P = V x I). Sobrecargas térmicas podem causar derretimento da camada isolante e alteração permanente do valor ôhmico.",
+        parts: ["Terminais de Cobre", "Corpo Cerâmico", "Anéis de Código de Cores", "Filme Resistivo Espiral"]
+      },
+      transformer: {
+        title: "Transformador de Potência Monofásico",
+        tag: "ELECTROMAGNÉTICO",
+        desc: "Equipamento estático que transfere energia elétrica de um circuito para outro através do princípio da indução eletromagnética de Faraday.",
+        how: "Composto por dois enrolamentos independentes de cobre (Primário e Secundário) envolvidos em um núcleo laminado de aço-silício de alta permeabilidade magnética.",
+        apps: "Subestações de energia, rebaixamento de tensão de rede (13.8kV para 220V/127V) e fontes de alimentação isoladas.",
+        safety: "Transformadores acumulam altas tensões perigosas. Nunca abra o invólucro sob carga e garanta o correto aterramento do núcleo de ferro.",
+        parts: ["Núcleo Laminado de Ferro", "Bobina Primária", "Bobina Secundária", "Isolamento de Verniz"]
+      },
+      motor: {
+        title: "Motor Elétrico de Indução Trifásico",
+        tag: "MÁQUINA ELÉTRICA",
+        desc: "Máquina assíncrona que converte energia elétrica trifásica em energia mecânica de rotação no eixo através de um campo magnético girante.",
+        how: "O estator recebe as 3 fases de corrente alternada criando um campo magnético rotativo que induz correntes nas barras do rotor ('gaiola de esquilo'), gerando torque.",
+        apps: "Bombas industriais, compressores, esteiras transportadoras, ventiladores e exaustores de alta potência.",
+        safety: "Atenção ao surto de corrente na partida (Ip/In). Utilizar chave estrela-triângulo ou inversor de frequência para mitigação de picos de tensão.",
+        parts: ["Estator com Bobinas", "Rotor Gaiola de Esquilo", "Eixo Central de Aço", "Carcaça Aletada de Ferro"]
+      },
+      solar: {
+        title: "Painel Solar Fotovoltaico Monocristalino",
+        tag: "RENOVÁVEL",
+        desc: "Dispositivo semicondutor que converte diretamente a radiação solar (fótons) em energia elétrica de corrente contínua (Efeito Fotovoltaico).",
+        how: "Células de Silício dopado (P-N). Quando a luz atinge os elétrons na camada de valência, estes ganham energia e fluem através da junção criando corrente elétrica.",
+        apps: "Sistemas solares residenciais On-Grid/Off-Grid, usinas solares centralizadas e sinalização autônoma.",
+        safety: "Painéis solares geram tensão assim que expostos à luz solar. Ao manusear, cubra os módulos ou utilize conectores isolados MC4.",
+        parts: ["Vidro Temperado Antireflexo", "Matriz de Células de Silício", "Moldura de Alumínio", "Caixa de Junção com Diodos"]
+      }
+    };
+
+    const GLOSSARY_TERMS = [
+      { term: "Tensão Elétrica (Volts)", def: "Diferença de potencial elétrico (d.p.p.) entre dois pontos que impulsiona o movimento de cargas elétricas." },
+      { term: "Corrente Elétrica (Amperes)", def: "Fluxo ordenado de partículas eletricamente carregadas (elétrons) através de um condutor por unidade de tempo." },
+      { term: "Resistência Elétrica (Ohms)", def: "Oposição que um material oferece à passagem da corrente elétrica." },
+      { term: "Potência Elétrica (Watts)", def: "Quantidade de energia elétrica convertida em trabalho ou calor por segundo ($P = V \times I$)." },
+      { term: "Fator de Potência (cos φ)", def: "Razão entre a potência ativa (útil) e a potência aparente total em circuitos de corrente alternada." },
+      { term: "Disjuntor Termomagnético", def: "Dispositivo de proteção que desliga automaticamente o circuito em caso de sobrecarga ou curto-circuito." },
+      { term: "Dispositivo DR", def: "Interruptor Diferencial Residual que protege seres humanos contra choques elétricos por fuga de corrente." },
+      { term: "Dispositivo DPS", def: "Protetor contra Surtos Elétricos causados por descargas atmosféricas (raios) na rede." },
+      { term: "Aterramento TN-S", def: "Sistema de proteção onde o condutor Neutro e o condutor de Proteção (Terra) são distintos em toda a instalação." }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        q: "Qual é a fórmula fundamental da Lei de Ohm para calcular a Tensão ($V$)?",
+        options: ["V = I / R", "V = I × R", "V = R / I", "V = P × I"],
+        answer: 1,
+        explanation: "A Lei de Ohm estabelece que a Tensão ($V$) é igual ao produto da Corrente ($I$) pela Resistência ($R$)."
+      },
+      {
+        q: "Qual dispositivo de proteção é obrigatório pela NBR 5410 para proteger pessoas contra choques em áreas molhadas?",
+        options: ["DPS", "Disjuntor Curva C", "Dispositivo DR (Diferencial Residual)", "Fusível NH"],
+        answer: 2,
+        explanation: "O DR secciona o circuito instantaneamente ao detectar pequenas fugas de corrente (como a passagem pelo corpo humano)."
+      },
+      {
+        q: "Em uma associação de resistores em SÉRIE de 10Ω e 20Ω, qual é a resistência equivalente total?",
+        options: ["6.66 Ω", "15 Ω", "30 Ω", "200 Ω"],
+        answer: 2,
+        explanation: "Em série, as resistências se somam diretamente: Req = 10 + 20 = 30Ω."
+      },
+      {
+        q: "O que acontece com a tensão secundária ($V_2$) de um transformador se dobrarmos o número de espiras do secundário ($N_2$)?",
+        options: ["A tensão cai pela metade", "A tensão dobra", "A tensão permanece igual", "O transformador queima"],
+        answer: 1,
+        explanation: "A relação de transformação é diretamente proporcional ao número de espiras: V1/V2 = N1/N2."
+      },
+      {
+        q: "Segundo a NR-10, qual é a primeira etapa para garantir a desenergização de um circuito antes da manutenção?",
+        options: ["Colocar etiqueta de aviso", "Seccionamento (Abertura da fonte)", "Fazer aterramento provisório", "Medir a corrente"],
+        answer: 1,
+        explanation: "A sequência inicia com o seccionamento efetivo das fontes de alimentação elétrica."
+      }
+    ];
+
+    /* ==========================================================================
+       2. THREE.JS 3D SCENE & ENGINE SYSTEM
+       ========================================================================== */
+    let scene, camera, renderer, controls;
+    let current3DGroup = null;
+    let animActive = true;
+    let currentModelKey = 'resistor';
+    let particleSystems = [];
+    let raycaster, mouse;
+    let highlightedMesh = null;
+
+    function init3D() {
+      const container = document.getElementById('canvas3dContainer');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // Scene setup
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0d14);
+
+      // Camera setup
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 4, 10);
+
+      // Renderer setup
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 1.8;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0x00f0ff, 1.2);
+      dirLight1.position.set(5, 10, 7);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x0077ff, 0.8);
+      dirLight2.position.set(-5, -5, -5);
+      scene.add(dirLight2);
+
+      const pointLight = new THREE.PointLight(0xffffff, 0.8, 20);
+      pointLight.position.set(0, 3, 2);
+      scene.add(pointLight);
+
+      // Grid Floor
+      const gridHelper = new THREE.GridHelper(20, 20, 0x00f0ff, 0x1e293b);
+      gridHelper.position.y = -2;
+      scene.add(gridHelper);
+
+      // Raycaster for click selection
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener('click', onCanvasClick, false);
+      window.addEventListener('resize', onWindowResize, false);
+
+      // Initial Model
+      load3DModel('resistor');
+
+      // Animation Loop
+      animate3D();
+    }
+
+    /* 3D PROCEDURAL MODEL BUILDERS */
+    function load3DModel(key) {
+      currentModelKey = key;
+      if (current3DGroup) scene.remove(current3DGroup);
+      particleSystems = [];
+      current3DGroup = new THREE.Group();
+
+      switch(key) {
+        case 'resistor':
+          buildResistorModel(current3DGroup);
+          break;
+        case 'transformer':
+          buildTransformerModel(current3DGroup);
+          break;
+        case 'motor':
+          buildMotorModel(current3DGroup);
+          break;
+        case 'solar':
+          buildSolarModel(current3DGroup);
+          break;
+      }
+
+      scene.add(current3DGroup);
+      updateEquipmentDetails(key);
+    }
+
+    // 1. RESISTOR MODEL
+    function buildResistorModel(group) {
+      // Body
+      const bodyGeo = new THREE.CylinderGeometry(0.8, 0.8, 3.5, 32);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.3, metalness: 0.1 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.rotation.z = Math.PI / 2;
+      body.name = "Corpo de Cerâmica Isolante";
+      group.add(body);
+
+      // Leads
+      const leadGeo = new THREE.CylinderGeometry(0.1, 0.1, 2.5, 16);
+      const leadMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.2 });
+      
+      const lead1 = new THREE.Mesh(leadGeo, leadMat);
+      lead1.rotation.z = Math.PI / 2;
+      lead1.position.x = -2.8;
+      lead1.name = "Terminal Elétrico de Cobre";
+      group.add(lead1);
+
+      const lead2 = new THREE.Mesh(leadGeo, leadMat);
+      lead2.rotation.z = Math.PI / 2;
+      lead2.position.x = 2.8;
+      lead2.name = "Terminal Elétrico de Cobre";
+      group.add(lead2);
+
+      // Color Bands
+      const bandColors = [0x9b51e0, 0x27ae60, 0xeb5757, 0xf2c94c];
+      const positions = [-1.0, -0.3, 0.4, 1.1];
+
+      positions.forEach((pos, idx) => {
+        const bandGeo = new THREE.CylinderGeometry(0.82, 0.82, 0.25, 32);
+        const bandMat = new THREE.MeshStandardMaterial({ color: bandColors[idx], roughness: 0.4 });
+        const band = new THREE.Mesh(bandGeo, bandMat);
+        band.rotation.z = Math.PI / 2;
+        band.position.x = pos;
+        band.name = `Faixa de Cor ${idx + 1} (Código de Resistência)`;
+        group.add(band);
+      });
+
+      // Animated Current Particles
+      const particleGeo = new THREE.BufferGeometry();
+      const count = 60;
+      const posArray = new Float32Array(count * 3);
+      for(let i=0; i<count*3; i+=3) {
+        posArray[i] = (Math.random() - 0.5) * 8;
+        posArray[i+1] = (Math.random() - 0.5) * 0.4;
+        posArray[i+2] = (Math.random() - 0.5) * 0.4;
+      }
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const particleMat = new THREE.PointsMaterial({ size: 0.08, color: 0x00f0ff });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      group.add(particles);
+      particleSystems.push({ mesh: particles, type: 'linear' });
+    }
+
+    // 2. TRANSFORMER MODEL
+    function buildTransformerModel(group) {
+      // Core
+      const coreShape = new THREE.BoxGeometry(3.5, 3.5, 1.2);
+      const coreMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.4 });
+      const core = new THREE.Mesh(coreShape, coreMat);
+      core.name = "Núcleo Laminado de Aço-Silício";
+      group.add(core);
+
+      // Center cutout
+      const cutMat = new THREE.MeshStandardMaterial({ color: 0x0a0d14 });
+      const cut = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 1.3), cutMat);
+      group.add(cut);
+
+      // Primary Coil (Left)
+      const coilGeo1 = new THREE.TorusGeometry(1.0, 0.35, 16, 32);
+      const copperMat1 = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.9, roughness: 0.2 });
+      const coil1 = new THREE.Mesh(coilGeo1, copperMat1);
+      coil1.position.x = -1.0;
+      coil1.name = "Enrolamento Primário (Alta Tensão)";
+      group.add(coil1);
+
+      // Secondary Coil (Right)
+      const coilGeo2 = new THREE.TorusGeometry(1.0, 0.45, 16, 32);
+      const copperMat2 = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+      const coil2 = new THREE.Mesh(coilGeo2, copperMat2);
+      coil2.position.x = 1.0;
+      coil2.name = "Enrolamento Secundário (Baixa Tensão)";
+      group.add(coil2);
+
+      // Magnetic Flux Particles Loop
+      const particleGeo = new THREE.BufferGeometry();
+      const count = 80;
+      const posArray = new Float32Array(count * 3);
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const particleMat = new THREE.PointsMaterial({ size: 0.1, color: 0x00f0ff });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      group.add(particles);
+      particleSystems.push({ mesh: particles, type: 'magnetic_loop', count: count });
+    }
+
+    // 3. MOTOR MODEL
+    function buildMotorModel(group) {
+      // Stator Body
+      const statorGeo = new THREE.CylinderGeometry(2.0, 2.0, 3.5, 32);
+      const statorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
+      const stator = new THREE.Mesh(statorGeo, statorMat);
+      stator.rotation.x = Math.PI / 2;
+      stator.name = "Estator Aletado (Carcaça)";
+      group.add(stator);
+
+      // Shaft / Rotor
+      const shaftGeo = new THREE.CylinderGeometry(0.4, 0.4, 6.0, 32);
+      const shaftMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+      const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+      shaft.rotation.x = Math.PI / 2;
+      shaft.name = "Eixo do Rotor Central";
+      group.add(shaft);
+
+      // Stator Windings inside
+      for(let i=0; i<6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const windGeo = new THREE.BoxGeometry(0.3, 3.0, 0.3);
+        const windMat = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8 });
+        const wind = new THREE.Mesh(windGeo, windMat);
+        wind.position.set(Math.cos(angle)*1.4, Math.sin(angle)*1.4, 0);
+        wind.name = "Bobina de Cobre do Estator";
+        group.add(wind);
+      }
+
+      particleSystems.push({ mesh: shaft, type: 'rotation' });
+    }
+
+    // 4. SOLAR PANEL MODEL
+    function buildSolarModel(group) {
+      // Aluminum Frame
+      const frameGeo = new THREE.BoxGeometry(5.0, 0.2, 3.5);
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+      const frame = new THREE.Mesh(frameGeo, frameMat);
+      frame.name = "Moldura de Alumínio Anodizado";
+      group.add(frame);
+
+      // Glass Silicon Surface
+      const panelGeo = new THREE.BoxGeometry(4.8, 0.05, 3.3);
+      const panelMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.1 });
+      const panel = new THREE.Mesh(panelGeo, panelMat);
+      panel.position.y = 0.1;
+      panel.name = "Células de Silício Monocristalino";
+      group.add(panel);
+
+      // Cell Grid Lines
+      const gridMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for(let x=-2; x<=2; x+=1) {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 3.3), gridMat);
+        line.position.set(x, 0.11, 0);
+        group.add(line);
+      }
+
+      // Solar Photon Rays Particles
+      const particleGeo = new THREE.BufferGeometry();
+      const count = 50;
+      const posArray = new Float32Array(count * 3);
+      for(let i=0; i<count*3; i+=3) {
+        posArray[i] = (Math.random() - 0.5) * 4.5;
+        posArray[i+1] = Math.random() * 3 + 1;
+        posArray[i+2] = (Math.random() - 0.5) * 3;
+      }
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const particleMat = new THREE.PointsMaterial({ size: 0.09, color: 0xffcc00 });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      group.add(particles);
+      particleSystems.push({ mesh: particles, type: 'solar_rain' });
+    }
+
+    /* ANIMATION & RENDER LOOP */
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      controls.update();
+
+      if (animActive && particleSystems.length > 0) {
+        particleSystems.forEach(sys => {
+          if (sys.type === 'linear') {
+            const positions = sys.mesh.geometry.attributes.position.array;
+            for(let i=0; i<positions.length; i+=3) {
+              positions[i] += 0.08;
+              if (positions[i] > 4) positions[i] = -4;
+            }
+            sys.mesh.geometry.attributes.position.needsUpdate = true;
+          }
+          else if (sys.type === 'magnetic_loop') {
+            const positions = sys.mesh.geometry.attributes.position.array;
+            const time = Date.now() * 0.002;
+            for(let i=0; i<sys.count; i++) {
+              const t = (i / sys.count) * Math.PI * 2 + time;
+              positions[i*3] = Math.cos(t) * 1.5;
+              positions[i*3+1] = Math.sin(t) * 1.5;
+              positions[i*3+2] = 0;
+            }
+            sys.mesh.geometry.attributes.position.needsUpdate = true;
+          }
+          else if (sys.type === 'rotation') {
+            sys.mesh.rotation.y += 0.05;
+          }
+          else if (sys.type === 'solar_rain') {
+            const positions = sys.mesh.geometry.attributes.position.array;
+            for(let i=1; i<positions.length; i+=3) {
+              positions[i] -= 0.05;
+              if (positions[i] < 0.1) positions[i] = 3.5;
+            }
+            sys.mesh.geometry.attributes.position.needsUpdate = true;
+          }
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* INTERACTION HANDLERS */
+    function onCanvasClick(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(current3DGroup.children, true);
+
+      if (intersects.length > 0) {
+        const clickedObj = intersects[0].object;
+        if (clickedObj.name) {
+          showSelectionToast(clickedObj.name);
+          highlightMesh(clickedObj);
+        }
+      }
+    }
+
+    function highlightMesh(mesh) {
+      if (highlightedMesh && highlightedMesh.material.emissive) {
+        highlightedMesh.material.emissive.setHex(0x000000);
+      }
+      highlightedMesh = mesh;
+      if (highlightedMesh.material.emissive) {
+        highlightedMesh.material.emissive.setHex(0x00f0ff);
+      }
+    }
+
+    function showSelectionToast(name) {
+      const toast = document.getElementById('selectionToast');
+      const label = document.getElementById('selectedPartName');
+      label.innerText = name;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    function updateEquipmentDetails(key) {
+      const data = EQUIPMENT_DATA[key];
+      document.getElementById('equipmentTitle').innerText = data.title;
+      document.getElementById('equipmentTag').innerText = data.tag;
+      document.getElementById('equipmentDesc').innerText = data.desc;
+      document.getElementById('equipmentHow').innerText = data.how;
+      document.getElementById('equipmentApps').innerText = data.apps;
+      document.getElementById('equipmentSafety').innerText = data.safety;
+
+      const partsList = document.getElementById('partsList');
+      partsList.innerHTML = data.parts.map(p => 
+        `<span class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-1 rounded text-slate-300">${p}</span>`
+      ).join('');
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas3dContainer');
+      if (!container) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    /* ==========================================================================
+       3. SIMULATORS CALCULATIONS & VISUALIZERS
+       ========================================================================== */
+    // Simulator 1: Ohm's Law
+    function updateOhmSimulator() {
+      const V = parseFloat(document.getElementById('ohmVoltageSlider').value);
+      const R = parseFloat(document.getElementById('ohmResistanceSlider').value);
+      const I = V / R;
+      const P = V * I;
+
+      document.getElementById('ohmVoltageVal').innerText = V.toFixed(1) + " Volts";
+      document.getElementById('ohmResistanceVal').innerText = R.toFixed(1) + " Ω";
+      document.getElementById('ohmCurrentRes').innerText = I.toFixed(2) + " A";
+      document.getElementById('ohmPowerRes').innerText = P.toFixed(2) + " W";
+
+      // Speed label
+      const speedLabel = document.getElementById('electronSpeedLabel');
+      if (I < 1.0) speedLabel.innerText = "Velocidade: Lenta";
+      else if (I < 5.0) speedLabel.innerText = "Velocidade: Média";
+      else speedLabel.innerText = "Velocidade: Alta (Pico)";
+
+      window.circuitCurrentSpeed = I;
+    }
+
+    // 2D Electron Drift Canvas Animation
+    function initElectronCanvas() {
+      const canvas = document.getElementById('circuitElectronCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+
+      let particles = [];
+      for(let i=0; i<40; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height / 2 + (Math.random() - 0.5) * 20
+        });
+      }
+
+      function renderCanvas() {
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Wire path
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height/2);
+        ctx.lineTo(canvas.width, canvas.height/2);
+        ctx.stroke();
+
+        // Particles
+        const speed = (window.circuitCurrentSpeed || 1.2) * 1.5;
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#00f0ff';
+
+        particles.forEach(p => {
+          p.x += speed;
+          if (p.x > canvas.width) p.x = 0;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        requestAnimationFrame(renderCanvas);
+      }
+      renderCanvas();
+    }
+
+    // Simulator 2: Residential kWh
+    function updateKwhSimulator() {
+      const watts = parseFloat(document.getElementById('applianceSelect').value);
+      const hours = parseFloat(document.getElementById('kwhHoursInput').value);
+      const tariff = parseFloat(document.getElementById('kwhTariffInput').value);
+
+      const kwhMonthly = (watts * hours * 30) / 1000;
+      const costMonthly = kwhMonthly * tariff;
+
+      document.getElementById('kwhMonthlyVal').innerText = kwhMonthly.toFixed(2) + " kWh";
+      document.getElementById('kwhCostVal').innerText = "R$ " + costMonthly.toFixed(2);
+    }
+
+    // Simulator 3: Series vs Parallel
+    function updateCircuitSimulator() {
+      const r1 = parseFloat(document.getElementById('circuitR1').value) || 1;
+      const r2 = parseFloat(document.getElementById('circuitR2').value) || 1;
+
+      const reqSeries = r1 + r2;
+      const reqParallel = (r1 * r2) / (r1 + r2);
+
+      document.getElementById('seriesReqVal').innerText = reqSeries.toFixed(2) + " Ω";
+      document.getElementById('parallelReqVal').innerText = reqParallel.toFixed(2) + " Ω";
+    }
+
+    // Simulator 4: Transformer Turns Ratio
+    function updateTransformerSim() {
+      const v1 = parseFloat(document.getElementById('transV1').value) || 1;
+      const n1 = parseFloat(document.getElementById('transN1').value) || 1;
+      const n2 = parseFloat(document.getElementById('transN2').value) || 1;
+
+      const v2 = v1 * (n2 / n1);
+      document.getElementById('transV2Val').innerText = v2.toFixed(2) + " Volts";
+
+      const label = document.getElementById('transTypeLabel');
+      if (v2 > v1) label.innerText = "Transformador Elevador (" + (n2/n1).toFixed(1) + ":1)";
+      else if (v2 < v1) label.innerText = "Transformador Rebaixador (1:" + (n1/n2).toFixed(1) + ")";
+      else label.innerText = "Transformador Isolador (1:1)";
+    }
+
+    /* ==========================================================================
+       4. GLOSSARY & QUIZ MODULES
+       ========================================================================== */
+    function renderGlossary(filter = "") {
+      const container = document.getElementById('glossaryGrid');
+      container.innerHTML = "";
+
+      const filtered = GLOSSARY_TERMS.filter(item => 
+        item.term.toLowerCase().includes(filter.toLowerCase()) || 
+        item.def.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-2";
+        card.innerHTML = `
+          <h4 class="text-sm font-bold text-brand-cyan font-mono">${item.term}</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">${item.def}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    let currentQuestionIdx = 0;
+    let score = 0;
+
+    function renderQuiz() {
+      const container = document.getElementById('quizContainer');
+      const q = QUIZ_QUESTIONS[currentQuestionIdx];
+
+      if (currentQuestionIdx >= QUIZ_QUESTIONS.length) {
+        container.innerHTML = `
+          <div class="text-center py-8 space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center text-3xl">
+              <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 class="text-2xl font-bold">Quiz Concluído!</h3>
+            <p class="text-slate-300 text-sm">Você acertou <span class="text-brand-cyan font-bold text-lg">${score}</span> de ${QUIZ_QUESTIONS.length} perguntas.</p>
+            <button onclick="restartQuiz()" class="px-6 py-2.5 rounded-xl bg-brand-cyan text-slate-950 font-bold hover:brightness-110 transition">
+              Refazer Avaliação
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400 pb-2 border-b border-slate-800">
+            <span>Questão ${currentQuestionIdx + 1} de ${QUIZ_QUESTIONS.length}</span>
+            <span>Pontuação: ${score}</span>
+          </div>
+
+          <h3 class="text-lg font-bold text-white">${q.q}</h3>
+
+          <div class="space-y-2.5">
+            ${q.options.map((opt, idx) => `
+              <button onclick="checkAnswer(${idx})" class="w-full text-left p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-sm text-slate-200 transition font-medium flex items-center justify-between">
+                <span>${opt}</span>
+                <i class="fa-regular fa-circle text-slate-500"></i>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    window.checkAnswer = function(selectedIdx) {
+      const q = QUIZ_QUESTIONS[currentQuestionIdx];
+      const container = document.getElementById('quizContainer');
+      const isCorrect = selectedIdx === q.answer;
+
+      if (isCorrect) score++;
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="p-4 rounded-xl border ${isCorrect ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'} font-semibold text-sm">
+            ${isCorrect ? '<i class="fa-solid fa-circle-check mr-2"></i> Resposta Correta!' : '<i class="fa-solid fa-circle-xmark mr-2"></i> Resposta Incorreta!'}
+          </div>
+
+          <p class="text-xs text-slate-300 bg-slate-900 p-4 rounded-xl border border-slate-800 leading-relaxed">
+            <strong>Explicação Técnica:</strong> ${q.explanation}
+          </p>
+
+          <button onclick="nextQuestion()" class="w-full py-3 rounded-xl bg-brand-cyan text-slate-950 font-bold hover:brightness-110 transition">
+            Próxima Questão <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      `;
+    };
+
+    window.nextQuestion = function() {
+      currentQuestionIdx++;
+      renderQuiz();
+    };
+
+    window.restartQuiz = function() {
+      currentQuestionIdx = 0;
+      score = 0;
+      renderQuiz();
+    };
+
+    /* ==========================================================================
+       5. INITIALIZATION & EVENT LISTENERS
+       ========================================================================== */
+    window.onload = function() {
+      // 1. Initialize 3D Canvas
+      init3D();
+
+      // 2. Initialize Electron Drift Canvas
+      initElectronCanvas();
+
+      // 3. Tab Switches for 3D Models
+      document.querySelectorAll('.model-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.model-tab-btn').forEach(b => {
+            b.classList.remove('bg-brand-cyan', 'text-slate-950', 'shadow-glow-cyan', 'active');
+            b.classList.add('bg-slate-800/80', 'text-slate-300');
+          });
+          const target = e.currentTarget;
+          target.classList.add('bg-brand-cyan', 'text-slate-950', 'shadow-glow-cyan', 'active');
+          target.classList.remove('bg-slate-800/80', 'text-slate-300');
+
+          const modelKey = target.getAttribute('data-model');
+          load3DModel(modelKey);
+        });
+      });
+
+      // 4. Overlay Controls
+      document.getElementById('btnResetCamera').addEventListener('click', () => {
+        camera.position.set(0, 4, 10);
+        controls.target.set(0, 0, 0);
+      });
+
+      document.getElementById('btnToggleAnim').addEventListener('click', () => {
+        animActive = !animActive;
+        document.getElementById('animLabel').innerText = animActive ? "Pausar Fluxo" : "Iniciar Fluxo";
+      });
+
+      document.getElementById('btnExplode').addEventListener('click', () => {
+        if (current3DGroup) {
+          current3DGroup.children.forEach((child, idx) => {
+            child.position.x += (Math.random() - 0.5) * 0.5;
+          });
+        }
+      });
+
+      // 5. Simulators Listeners
+      document.getElementById('ohmVoltageSlider').addEventListener('input', updateOhmSimulator);
+      document.getElementById('ohmResistanceSlider').addEventListener('input', updateOhmSimulator);
+      updateOhmSimulator();
+
+      document.getElementById('applianceSelect').addEventListener('change', updateKwhSimulator);
+      document.getElementById('kwhHoursInput').addEventListener('input', updateKwhSimulator);
+      document.getElementById('kwhTariffInput').addEventListener('input', updateKwhSimulator);
+      updateKwhSimulator();
+
+      document.getElementById('circuitR1').addEventListener('input', updateCircuitSimulator);
+      document.getElementById('circuitR2').addEventListener('input', updateCircuitSimulator);
+      updateCircuitSimulator();
+
+      document.getElementById('transV1').addEventListener('input', updateTransformerSim);
+      document.getElementById('transN1').addEventListener('input', updateTransformerSim);
+      document.getElementById('transN2').addEventListener('input', updateTransformerSim);
+      updateTransformerSim();
+
+      // 6. Glossary Search & Render
+      renderGlossary();
+      document.getElementById('glossarySearch').addEventListener('input', (e) => {
+        renderGlossary(e.target.value);
+      });
+
+      // 7. Render Quiz
+      renderQuiz();
+
+      // 8. Mobile Menu Toggle
+      const mobileBtn = document.getElementById('mobileMenuBtn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      mobileBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+      document.querySelectorAll('.mobile-link').forEach(link => {
+        link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+      });
+    };
+  </script>
+</body>
+</html>
